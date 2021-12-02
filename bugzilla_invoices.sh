@@ -80,7 +80,7 @@ function usage {
 	# shellcheck disable=SC2028
 	echo "
 	Example: If you are in November and run the following arguments
-	./create_invoice.sh -r 100 -p 10 -m 10 -i -t client@example.com -c 'Bugzilla Product 1' \\
+	$(basename "$0") -r 100 -p 10 -m 10 -i -t client@example.com -c 'Bugzilla Product 1' \\
 	-s 'Dear Valued Customer:' -f me@example.com -a '--begin_date=last_month' \\
 	-o 'My Example Company' -n -e $'ajotest\nVP of Sales'
 
@@ -120,6 +120,16 @@ function usage {
 	exit 1
 }
 
+# Look for @ sign and space for email validation
+function check_email() {
+	email=$1
+	if [[ $email =~ .+@.+ && ! ($email =~ " ") ]] ; then
+		return 0
+	else
+		return 1
+	fi
+}
+
 # If called without args error out
 if [[ ${#} -eq 0 ]]; then
 	echo "Must be called with argument specifying client"
@@ -128,7 +138,7 @@ fi
 
 
 # Define list of arguments expected in the input
-optstring=":dinqba:c:e:f:h:m:o:p:r:s:t:"
+optstring=":dinqa:b:c:e:f:h:m:o:p:r:s:t:"
 DRY_RUN="false"
 BCC="false"
 INVOICE_MODE="false"
@@ -143,6 +153,10 @@ while getopts ${optstring} arg; do
 			;;
 		b)
 			EMAIL_BCC="${OPTARG}"
+			if ! check_email $EMAIL_BCC; then
+				echo "Error in BCC $EMAIL_BCC"
+				exit 1
+			fi
 			BCC="true"
 			;;
 		c)
@@ -158,6 +172,10 @@ while getopts ${optstring} arg; do
 			;;
 		f)
 			EMAIL_FROM="${OPTARG}"
+			if ! check_email $EMAIL_FROM; then
+				echo "Error in FROM $EMAIL_FROM"
+				exit 1
+			fi
 			;;
 		i)
 			#-w = wrap long lines
@@ -171,7 +189,7 @@ while getopts ${optstring} arg; do
 			;;
 		m)
 			NUMBER_OF_VMS="${OPTARG}"
-			if [[ $NUMBER_OF_VMS -lt 0 ]]; then
+			if [[ $NUMBER_OF_VMS < 0 ]]; then
 				echo "Error: Can't have fewer than 0 machines"
 				exit 1
 			fi
@@ -185,14 +203,14 @@ while getopts ${optstring} arg; do
 			;;
 		p)
 			DISCOUNT_PCT="${OPTARG}"
-			if [[ $DISCOUNT_PCT -lt 0 ]]; then
+			if [[ $DISCOUNT_PCT < 0 ]]; then
 				echo "Error: Can't have percent discount < 0"
 				exit 1
 			fi
 			;;
 		r)
 			RATE="${OPTARG}"
-			if [[ $RATE -lt 0 ]]; then
+			if [[ $RATE < 0 ]]; then
 				echo "Error: Can't have rate less than 0"
 				exit 1
 			fi
@@ -200,6 +218,10 @@ while getopts ${optstring} arg; do
 			;;
 		t)
 			EMAIL_TO="${OPTARG}"
+			if ! check_email $EMAIL_TO; then
+				echo "Error in EmailTo $EMAIL_TO"
+				exit 1
+			fi
 			;;
 		s)
 			SALUTATION="${OPTARG}"
