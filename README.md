@@ -66,3 +66,5 @@ Example: (-n flag gives no-email output)
         My title here
         My Example Company
 ```
+
+Quickbooks IIF documentation at: https://quickbooks.intuit.com/learn-support/en-us/help-article/list-management/iif-overview-import-kit-sample-files-headers/L5CZIpJne_US_en_US

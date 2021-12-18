@@ -73,6 +73,7 @@ function usage {
 	echo '   -r <number>     Rate per hour to charge'
 	echo '   -s <SALUTATION> The Hello string for reports'
 	echo '   -t <EMAIL>      Email to use for To: email/report'
+	echo '   -x              Export in Quickbooks IIF format (not yet implemented)'
 	echo ''
 	echo 'You can use cursor control sequences to get multi-line variables. E.g. '
 	# shellcheck disable=SC2028
@@ -141,6 +142,7 @@ fi
 optstring=":dinqa:b:c:e:f:h:m:o:p:r:s:t:"
 DRY_RUN="false"
 BCC="false"
+IIF="false"
 INVOICE_MODE="false"
 QUIET_MODE="false"
 PROGRAM_EXTRA_ARGS=""
@@ -153,7 +155,7 @@ while getopts ${optstring} arg; do
 			;;
 		b)
 			EMAIL_BCC="${OPTARG}"
-			if ! check_email $EMAIL_BCC; then
+			if ! check_email "$EMAIL_BCC"; then
 				echo "Error in BCC $EMAIL_BCC"
 				exit 1
 			fi
@@ -172,7 +174,7 @@ while getopts ${optstring} arg; do
 			;;
 		f)
 			EMAIL_FROM="${OPTARG}"
-			if ! check_email $EMAIL_FROM; then
+			if ! check_email "$EMAIL_FROM"; then
 				echo "Error in FROM $EMAIL_FROM"
 				exit 1
 			fi
@@ -189,7 +191,7 @@ while getopts ${optstring} arg; do
 			;;
 		m)
 			NUMBER_OF_VMS="${OPTARG}"
-			if [[ $NUMBER_OF_VMS < 0 ]]; then
+			if [[ $NUMBER_OF_VMS -lt 0 ]]; then
 				echo "Error: Can't have fewer than 0 machines"
 				exit 1
 			fi
@@ -203,28 +205,31 @@ while getopts ${optstring} arg; do
 			;;
 		p)
 			DISCOUNT_PCT="${OPTARG}"
-			if [[ $DISCOUNT_PCT < 0 ]]; then
+			if [[ $DISCOUNT_PCT -lt 0 ]]; then
 				echo "Error: Can't have percent discount < 0"
 				exit 1
 			fi
 			;;
 		r)
 			RATE="${OPTARG}"
-			if [[ $RATE < 0 ]]; then
+			if [[ $RATE -lt 0 ]]; then
 				echo "Error: Can't have rate less than 0"
 				exit 1
 			fi
 			PROGRAM_EXTRA_ARGS="$PROGRAM_EXTRA_ARGS --rate $RATE"
 			;;
+		s)
+			SALUTATION="${OPTARG}"
+			;;
 		t)
 			EMAIL_TO="${OPTARG}"
-			if ! check_email $EMAIL_TO; then
+			if ! check_email "$EMAIL_TO"; then
 				echo "Error in EmailTo $EMAIL_TO"
 				exit 1
 			fi
 			;;
-		s)
-			SALUTATION="${OPTARG}"
+		x)
+			IIF="true"
 			;;
 		:)
 			echo "Must supply an argument"
@@ -248,7 +253,7 @@ fi
 
 if [[ $DRY_RUN == "false" && ($EMAIL_TO == "" || $EMAIL_FROM == "") ]]; then
 	echo "DRY RUN = $DRY_RUN so can't have From or To emails blank"
-  usage
+	usage
 fi
 
 if [[ $INVOICE_MODE == "true" ]]; then
@@ -285,7 +290,9 @@ read -r -d '' HEADER <<-ENDTEXT
 	
 ENDTEXT
 
-print_v "$HEADER"
+if [[ $IIF != "true" ]]; then
+	print_v "$HEADER"
+fi
 
 # shellcheck disable=SC2086
 if TIMEROUT=$($PROGRAM $PROGRAM_EXTRA_ARGS --rate=$RATE --product="$CLIENT"); then
@@ -326,18 +333,21 @@ else
 fi
 
 
-read -r -d '' FOOTER <<-ENDTEXT
-	------------------------------------------------------------
-	$REPORT_LINES
+if [[ $IIF != "true" ]]; then
+	#If redirection operator is <<-, then all leading tab characters are stripped
+	read -r -d '' FOOTER <<-ENDTEXT
+		------------------------------------------------------------
+		$REPORT_LINES
+		
+		Thank you for your business, we appreciate it very much
+		
+		Sincerely,
+		$ENDSIGN
+		$ORGANIZATION
+	ENDTEXT
 	
-	Thank you for your business, we appreciate it very much
-	
-	Sincerely,
-	$ENDSIGN
-	$ORGANIZATION
-ENDTEXT
-
-print_v "$FOOTER"
+	print_v "$FOOTER"
+fi
 
 echo "$MAIL_FORMAT_FOOTER" >> "$MESSAGE_FILE"
 
