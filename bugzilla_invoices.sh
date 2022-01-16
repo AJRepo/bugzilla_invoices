@@ -351,7 +351,7 @@ fi
 
 echo "$MAIL_FORMAT_FOOTER" >> "$MESSAGE_FILE"
 
-if [[ $DRY_RUN == "false" ]]; then
+if [[ $DRY_RUN == "false" && $(echo "$TOTAL > 0" | bc) -eq 1 ]]; then
 	if [[ $DEBUG == "true" ]]; then
 		echo "SENDING TO $EMAIL_TO"
 	fi
@@ -361,7 +361,7 @@ if [[ $DRY_RUN == "false" ]]; then
 		$MAIL -s "BCC Invoice $UUID_GEN from JEO.NET" "$EMAIL_BCC" < "$MESSAGE_FILE"
 	fi
 else
-	echo "Dry Run: NO MAIL SENT"
+	echo "Total <= 0.00 or Dry Run: NO MAIL SENT"
 fi
 
 # Note: Must use tabs instead of spaces (e.g. noexpandtab) for heredoc (<<-) to work
