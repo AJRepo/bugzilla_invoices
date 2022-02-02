@@ -205,14 +205,14 @@ while getopts ${optstring} arg; do
 			;;
 		p)
 			DISCOUNT_PCT="${OPTARG}"
-			if [[ $DISCOUNT_PCT -lt 0 ]]; then
+			if [[ $(echo "$DISCOUNT_PCT < 0" | bc) == 1 ]]; then
 				echo "Error: Can't have percent discount < 0"
 				exit 1
 			fi
 			;;
 		r)
 			RATE="${OPTARG}"
-			if [[ $RATE -lt 0 ]]; then
+			if [[ $(echo "$RATE < 0" | bc) == 1 ]]; then
 				echo "Error: Can't have rate less than 0"
 				exit 1
 			fi
