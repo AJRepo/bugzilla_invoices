@@ -191,7 +191,7 @@ while getopts ${optstring} arg; do
 			;;
 		m)
 			NUMBER_OF_VMS="${OPTARG}"
-			if [[ $NUMBER_OF_VMS -lt 0 ]]; then
+			if [[ $(echo "$NUMBER_OF_VMS < 0" | bc) == 1 ]]; then
 				echo "Error: Can't have fewer than 0 machines"
 				exit 1
 			fi
